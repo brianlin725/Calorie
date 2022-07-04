@@ -5,7 +5,7 @@ Calorie is a tool using the Taiwanese FDA Database as well as the USDA FDC API t
 * Search up an ingredient's calorie count through the Database
 * Automatically calculates the total calorie and calorie per 100g
 * Calculates total calories through the designated serving size of a recipe <br />
-# UI
+# Take a look
 Main Screen <br />
 <img src="data/main_zhtw.PNG" alt="main_zhtw" width="600"/><br />
 Searching through database <br />
