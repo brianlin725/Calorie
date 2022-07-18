@@ -15,4 +15,3 @@ Click [HERE](https://drive.google.com/file/d/1-DjAFjpVLnZgxdUQqUc0r16d8P_aOGE_/v
 This is my first app, I am still figuring out how to bypass the Microsoft Defender, which is most likely impossible.
 # Future Updates
 * Hopefully I will abandon the use of the FDC API and use their database directly instead.
-* Add a save feature
