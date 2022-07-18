@@ -1,14 +1,19 @@
+from ctypes import alignment
+from mailbox import mboxMessage
+from pathlib import Path
 from tkinter import *
 import tkinter
+from tkinter import filedialog
 import customtkinter
 from PIL import Image, ImageTk
 from tkinter import messagebox, ttk
 import sqlite3
 import os
 from googletrans import Translator
+from numpy import save
 import requests
 import copy
-from creds import api_key
+import json
 
 customtkinter.set_appearance_mode("Light")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -61,15 +66,17 @@ class App(customtkinter.CTk):
         # Setting up window
         self.geometry(f"{App.WIDTH}x{App.HEIGHT}")
         self.protocol("WM_DELETE_WINDOW", self.on_closing)  # call .on_closing() when app gets closed
-        self.title("Calorie")
-
-        # Setting icon
-        my_img = ImageTk.PhotoImage(Image.open(os.path.join("data", "icon.png")))
-        self.iconphoto(False, my_img)
+        self.title("未儲存 - Calorie")
+        self.iconbitmap(os.path.join(PATH, "icon.ico"))
 
         # Connecting to database
-        conn = sqlite3.connect(os.path.join(PATH, "data", "saved_items"))
+        conn = sqlite3.connect(os.path.join(PATH, "saved_items"))
         c = conn.cursor()
+        self.currDir = ""
+        self.save = True
+
+        # Shortcuts
+        self.bind('<Control-s>', self.saveFile)
 
         # Check if table exists
         c.execute(''' SELECT name FROM sqlite_master WHERE type='table' AND name='items' ''')
@@ -173,16 +180,50 @@ class App(customtkinter.CTk):
         # Button
         self.insertTool = customtkinter.CTkButton(master=self.frameTool,
                                                 text="添加",
-                                                command=self.insert_btn)
-        self.insertTool.grid(row=1, column=0, pady=3, padx=20)
+                                                command=self.insert_btn, 
+                                                fg_color = "#d1d5d8",
+                                                hover_color = "#BEBEBE")
+        self.insertTool.grid(row=1, column=0, pady=(3,1), padx=5)
         self.insertTool.config(width = 70)
 
         self.removeTool = customtkinter.CTkButton(master=self.frameTool,
                                                 text="全部移除",
-                                                command=self.removeAll)
-        self.removeTool.grid(row=2, column=0, pady=3, padx=20)
+                                                command=self.removeAll,
+                                                fg_color = "#d1d5d8",
+                                                hover_color = "#BEBEBE")
+        self.removeTool.grid(row=2, column=0, pady=1, padx=5)
         self.removeTool.config(width = 70)
+        
+        # PROCESSING DATA
+        
 
+        # Adding menu
+        menubar = Menu(self)
+
+        filemenu = Menu(menubar, tearoff=0)
+        filemenu.add_command(label="新增", command=self.openNew)
+        filemenu.add_command(label="開啟", command=self.open)
+        filemenu.add_command(label="儲存", command=self.saveFile)
+        filemenu.add_command(label="另存新檔", command=self.saveNew)
+        filemenu.add_separator()
+        filemenu.add_command(label="離開", command=self.quit)
+        # Warning should be added ^ (save, exit, cancel)
+        menubar.add_cascade(label="檔案", menu=filemenu)
+
+        helpmenu = Menu(menubar, tearoff=0)
+        helpmenu.add_command(label="查詢", command=self.donothing)
+        helpmenu.add_command(label="關於...", command=self.donothing)
+        menubar.add_cascade(label="說明", menu=helpmenu)
+
+        self.config(menu = menubar)
+
+        #item1 = Item("品項1", 1, "g", "243")
+        #item2 = Item("品項2", 45, "teaspoon", "419")
+        #item3 = Item("品項3", 3, "cup", "432")
+
+        #self.insert_element(item1, 72)
+        #self.insert_element(item2, 78)
+        #self.insert_element(item3, 75)
     def donothing(self):
         pass
 
@@ -190,6 +231,17 @@ class App(customtkinter.CTk):
         pass
 
     def on_closing(self, event=0):
+        if not self.save:
+            response = messagebox.askyesnocancel("Info", "是否要儲存此檔案")
+
+            if response:
+                dialogResponse = self.saveFile()
+                if not dialogResponse:
+                    return
+
+            elif response == None:
+                return
+            
         self.destroy()
 
     def change_appearance_mode(self, new_appearance_mode):
@@ -199,8 +251,16 @@ class App(customtkinter.CTk):
         self.insertWindow = customtkinter.CTkToplevel(self)
         self.insertWindow.title("新增項目")
         self.insertWindow.geometry("700x200")
+        self.insertWindow.iconbitmap(os.path.join(PATH, "icon.ico"))
         
+        # Frame setup
+        #self.insertWindow.grid_columnconfigure(0, weight=1)
+        #self.insertWindow.grid_rowconfigure(0, weight=1)
+        #self.insertWindow.frame = customtkinter.CTkFrame(master = self.insertWindow, width = 650, corner_radius=0)
+        #self.insertWindow.frame.grid(row = 0, column = 0, sticky = "nswe", rowspan = 2)
         self.insertWindow.grab_set()
+
+        
 
         #Label
         self.label_1 = customtkinter.CTkLabel(master=self.insertWindow,
@@ -223,7 +283,7 @@ class App(customtkinter.CTk):
                                               text_font=("Roboto Medium", -14))  # font name and size in px
         self.label_4.grid(row=0, column=3, pady=10, padx=10)
 
-        conn = sqlite3.connect(os.path.join(PATH, "data", "saved_items"))
+        conn = sqlite3.connect(os.path.join(PATH, "saved_items"))
         c = conn.cursor()
         c.execute("SELECT * FROM items")
         temp = c.fetchall()
@@ -243,7 +303,7 @@ class App(customtkinter.CTk):
             self.entry.insert(0, event.widget.get())
 
             # Connecting to database
-            conn = sqlite3.connect(os.path.join(PATH, "data", "saved_items"))
+            conn = sqlite3.connect(os.path.join(PATH, "saved_items"))
             c = conn.cursor()
 
             self.p100gEntry.delete(0, "end")
@@ -304,7 +364,7 @@ class App(customtkinter.CTk):
 
         def deleteFromDb():
             # Connecting to database
-            conn = sqlite3.connect(os.path.join(PATH, "data", "saved_items"))
+            conn = sqlite3.connect(os.path.join(PATH, "saved_items"))
             c = conn.cursor()
             c.execute("DELETE FROM items WHERE name = (?)", (self.entry.get(),))
             conn.commit()
@@ -323,7 +383,7 @@ class App(customtkinter.CTk):
             if response == False:
                 return
             # Connecting to database
-            conn = sqlite3.connect(os.path.join(PATH, "data", "saved_items"))
+            conn = sqlite3.connect(os.path.join(PATH, "saved_items"))
             c = conn.cursor()
             c.execute("DELETE FROM items")
             conn.commit()
@@ -345,10 +405,14 @@ class App(customtkinter.CTk):
     # Window for editing value   
     def edit(self, event):
         # Selected item values to set as default value for edit screen
-        curName = self.itemTree.item(self.itemTree.focus())["values"][0]
-        curQuantity = self.itemTree.item(self.itemTree.focus())["values"][1]
-        curUnit = self.itemTree.item(self.itemTree.focus())["values"][2]
-        curp100g = self.itemTree.item(self.itemTree.focus())["values"][3]
+        try:
+            curName = self.itemTree.item(self.itemTree.focus())["values"][0]
+            curQuantity = self.itemTree.item(self.itemTree.focus())["values"][1]
+            curUnit = self.itemTree.item(self.itemTree.focus())["values"][2]
+            curp100g = self.itemTree.item(self.itemTree.focus())["values"][3]
+        # Double clicked on nothing
+        except IndexError:
+            return
 
         index = int(self.itemTree.selection()[0])
         
@@ -356,7 +420,7 @@ class App(customtkinter.CTk):
         self.editWindow = customtkinter.CTkToplevel(self)
         self.editWindow.title("編輯")
         self.editWindow.geometry("450x120")
-        
+        self.editWindow.iconbitmap(os.path.join(PATH, "icon.ico"))
         self.editWindow.grab_set()
 
         #Labels for Edit Window
@@ -439,7 +503,7 @@ class App(customtkinter.CTk):
                                 item.unit, 
                                 item.p100g))
         # Connecting to database
-        conn = sqlite3.connect(os.path.join(PATH, "data", "saved_items"))
+        conn = sqlite3.connect(os.path.join(PATH, "saved_items"))
         c = conn.cursor()
         c.execute('SELECT name FROM items WHERE name = (?)', (name,))
         try:
@@ -456,6 +520,14 @@ class App(customtkinter.CTk):
         self.currP100G.set(f"Kcal/100g: {self.kcalP100G(self.itemList)}")
         self.currKcal.set(f"總卡路里: {self.totalKCal(self.itemList)}")
 
+        if self.save:
+            self.save = False
+            if self.currDir == "":
+                self.title(f"• 未儲存 - Calorie")
+            else:
+                self.title(f"• {os.path.basename(self.currDir)} - Calorie")
+
+        
         self.editWindow.destroy()
 
     def insert_element(self, name, quantity, unit, p100g):
@@ -483,8 +555,16 @@ class App(customtkinter.CTk):
                                 values = (item.name, item.quantity, 
                                 item.unit, 
                                 item.p100g))
+
+        if self.save:
+            self.save = False
+            if self.currDir == "":
+                self.title(f"• 未儲存 - Calorie")
+            else:
+                self.title(f"• {os.path.basename(self.currDir)} - Calorie")
+
         # Connecting to database
-        conn = sqlite3.connect(os.path.join(PATH, "data", "saved_items"))
+        conn = sqlite3.connect(os.path.join(PATH, "saved_items"))
         c = conn.cursor()
         c.execute('SELECT name FROM items WHERE name = (?)', (name,))
         try:
@@ -507,6 +587,7 @@ class App(customtkinter.CTk):
         # Creating Window
         self.searchWindow = customtkinter.CTkToplevel(self)
         self.searchWindow.title("搜尋...")
+        self.searchWindow.iconbitmap(os.path.join(PATH, "icon.ico"))
         self.searchWindow.geometry("800x120")
 
         self.searchWindow.grid_columnconfigure(0, weight=1)
@@ -549,6 +630,8 @@ class App(customtkinter.CTk):
             self.p100gEntry.delete(0, "end")
             self.p100gEntry.insert(0, curKcal)
 
+            self.searchWindow.destroy()
+
         self.searchTree.bind("<Double-Button-1>", updateInsertEntries)
         #self.searchTree.bind("<Double-Button-1>", self.edit)
         #self.searchTree.bind("<Delete>", self.removeElement)
@@ -574,7 +657,7 @@ class App(customtkinter.CTk):
             trans = Translator()
             name = trans.translate(name, dest = "zh-tw").text
 
-            conn = sqlite3.connect(os.path.join(PATH, "data", "item_data"))
+            conn = sqlite3.connect(os.path.join(PATH, "item_data"))
             c = conn.cursor()
 
             name = "%" + name + "%"
@@ -597,6 +680,7 @@ class App(customtkinter.CTk):
             name = trans.translate(name).text
 
             # REMEMBER TO HIDE THIS IN THE END
+            api_key = "jV7JnR8PB9Yae0W8dZoalu6ArtRqQohaABDcrZaa"
             trans = Translator()
             name = trans.translate(name).text
 
@@ -816,53 +900,100 @@ class App(customtkinter.CTk):
         return f'{(float(designated)/100 * float(kCalP100G)):g}'
         #return round(float(designated)/100.0 * kCalP100G, 2)
 
-    def saveNew(self):
-        # Creating Window
-        self.saveNewWindow = customtkinter.CTkToplevel(self)
-        self.saveNewWindow.title("儲存")
-        self.saveNewWindow.geometry("260x40")
-        self.saveNewWindow.maxsize(260,40)
-    
-        self.saveNewWindow.grab_set()
-
-        # Enter file name field
-        fileNameEnter = customtkinter.CTkEntry(master = self.saveNewWindow, width = 190)
-        fileNameEnter.grid(row = 0, column = 0, padx = (5,1), pady = (2,2), sticky = "nswe")
-        fileNameEnter.insert(0,"未命名")
-
-        # Saving file into database
-        def save():
-            # Connecting to database
-            conn = sqlite3.connect(os.path.join(PATH, "data", "saved_files"))
-            c = conn.cursor()
-            # Check if table exists
-            c.execute(" SELECT name FROM sqlite_master WHERE type='table' AND name=(?) ", (fileNameEnter.get(),))
-            try:
-                result = c.fetchone()[0]
-                response = messagebox.askyesno("Warning", "有與所輸入名稱重複的資料，是否要覆蓋")
-                if response == False:
+    # Opens a new file
+    def openNew(self):
+        if self.save == False:
+            response = messagebox.askyesno("Warning", "是否要儲存本檔案")
+            if response == True:
+                dialogResponse = self.saveFile()
+                if not dialogResponse:
                     return
-                c.execute(c.execute("DELETE FROM (?)"), (fileNameEnter.get(),))
-                conn.commit()
-            except TypeError:
-                c.execute('''CREATE TABLE ? (
-                    name text,
-                    kcal real,
-                    note text,
-                    source text
-                )''', fileNameEnter.get())
-                conn.commit()
 
-            for i in self.itemList:
-                c.execute("INSERT INTO (?) VALUES(?,?,?,?)", (fileNameEnter.get(),i.name, i.kcal, i.note, i.source,))
-            self.title = (fileNameEnter.get() + (" - Calorie"))
-            
-            conn.close()
-            self.saveNewWindow.destroy()
+        self.itemList = []
 
-        # Enter button
-        enterButton = customtkinter.CTkButton(master = self.saveNewWindow, width = 15, text = "確認", command = save)
-        enterButton.grid(row = 0, column = 1, padx = (1,5), pady = (2,2), sticky = "nswe")
+        for i in self.itemTree.get_children():
+            self.itemTree.delete(i)
+
+        self.currDir = ""
+        self.save = True
+        self.title("未儲存 - Calorie")
+
+    # Opens a file
+    def open(self):
+        if self.save == False:
+            response = messagebox.askyesno("Warning", "是否要儲存本檔案")
+            if response == True:
+                dialogResponse = self.saveFile()
+                if not dialogResponse:
+                    return
+        
+        file = filedialog.askopenfile(title = "開啟", filetypes = [("JSON Files", "*.json")])
+
+        # In case close the file dialog
+        try:
+            data = json.load(file)
+        except AttributeError:
+            return
+        
+        # in case the file does not load
+        backupList = copy.deepcopy(self.itemList)
+        
+        self.itemList = []
+        try:
+            for i in data:
+                self.itemList.append(Item(i['name'], i['quantity'], i['unit'], i['p100g']))
+
+            for i in self.itemTree.get_children():
+                self.itemTree.delete(i)
+
+            for item in self.itemList:
+                self.itemTree.insert(parent = "", 
+                                    index = "end", 
+                                    iid = self.itemList.index(item), 
+                                    values = (item.name, item.quantity, 
+                                    item.unit, 
+                                    item.p100g))
+        except KeyError:
+            self.itemList = backupList
+            response = messagebox.showerror("Error", "檔案格式錯誤或不支援")
+            return
+
+        self.currDir = file.name
+        self.save = True
+
+        self.title(f"{os.path.basename(self.currDir)} - Calorie")
+
+
+    def saveFile(self, v = None):
+        if self.currDir == "":
+            self.saveNew()
+            return
+
+        data = []
+        for i in self.itemList:
+            data.append({"name": i.name, "quantity": i.quantity, "unit": i.unit, "p100g": i.p100g})
+        
+        with open(self.currDir,"w") as f:
+            json.dump(data, f)
+
+        self.title(f"{os.path.basename(self.currDir)} - Calorie")
+        self.save = True
+
+    def saveNew(self):
+        data = []
+        for i in self.itemList:
+            data.append({"name": i.name, "quantity": i.quantity, "unit": i.unit, "p100g": i.p100g})
+        fileSave = filedialog.asksaveasfilename(defaultextension = ".html", initialdir = "DocumentFolder", title = "另存新檔", filetypes = [("JSON files", "*.json")], initialfile = "未命名")
+
+        try:
+            with open(fileSave, "w") as f:
+                json.dump(data, f)
+        except FileNotFoundError:
+            return False
+
+        self.title(f"{os.path.basename(fileSave)} - Calorie")
+        self.save = True
+        self.currDir = fileSave
 
 if __name__ == "__main__":
     app = App()
