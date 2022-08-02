@@ -11,10 +11,11 @@ Main Screen <br />
 Searching through database <br />
 <img src="data/search_zhtw.PNG" alt="search_zhtw" width="600"/><br />
 # Installation
-Click [HERE](https://drive.google.com/file/d/1_wiJ3pzqtzwE1lpLSnkFA1gtcOlEDQqB/view?usp=sharing) to be redirected to download.<br />
+Click [HERE](https://drive.google.com/file/d/1H64awV8oiitW0BR9Nm5X3RlpgSBqrkdV/view?usp=sharing) to be redirected to download.<br />
 This is my first app, I am still figuring out how to bypass the Microsoft Defender, which is most likely impossible.
 # 1.2.0 Updates
 * Added a main menu screen
 * Added English Language support. The default language is now English. This could be changed in the settings
-# 1.2.1 Bug Fixes
-* Fixed Calorie cannot startup issue.
+# 1.2.2 Bug Fixes
+* Change settings window title
+* Disable Apply button when new settings are applied
