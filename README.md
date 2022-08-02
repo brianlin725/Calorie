@@ -11,7 +11,7 @@ Main Screen <br />
 Searching through database <br />
 <img src="data/search_zhtw.PNG" alt="search_zhtw" width="600"/><br />
 # Installation
-Click [HERE](https://drive.google.com/file/d/1-DjAFjpVLnZgxdUQqUc0r16d8P_aOGE_/view?usp=sharing) to be redirected to download.<br />
+Click [HERE](https://drive.google.com/file/d/1QGqs6nMWmhIJPUxH71_OhKTF6Vml7QQR/view?usp=sharing) to be redirected to download.<br />
 This is my first app, I am still figuring out how to bypass the Microsoft Defender, which is most likely impossible.
 # Future Updates
 * Hopefully I will abandon the use of the FDC API and use their database directly instead.
