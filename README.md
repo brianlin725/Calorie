@@ -15,6 +15,6 @@ Click [HERE](https://drive.google.com/file/d/1_wiJ3pzqtzwE1lpLSnkFA1gtcOlEDQqB/v
 This is my first app, I am still figuring out how to bypass the Microsoft Defender, which is most likely impossible.
 # 1.2.0 Updates
 * Added a main menu screen
-* Added English Language support. The default language is now english. This could be changed in the settings
+* Added English Language support. The default language is now English. This could be changed in the settings
 # 1.2.1 Bug Fixes
 * Fixed Calorie cannot startup issue.
