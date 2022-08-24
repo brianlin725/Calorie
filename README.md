@@ -11,7 +11,7 @@ Main Screen <br />
 Searching through database <br />
 <img src="data/search_zhtw.PNG" alt="search_zhtw" width="600"/><br />
 # Installation
-Click [HERE](https://drive.google.com/file/d/15-HV61pwFV3MYwCimXRvJQBUSdxMkDSc/view?usp=sharing) to be redirected to download.<br />
+Click [HERE](https://drive.google.com/file/d/1CtKTIe3JLTJjbugSLyhGvtaYly5Kuj-5/view?usp=sharing) to be redirected to download.<br />
 This is my first app, I am still figuring out how to bypass the Microsoft Defender, which is most likely impossible.
 # 1.2.0 Updates
 * Added a main menu screen
